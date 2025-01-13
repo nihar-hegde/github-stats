@@ -1,28 +1,10 @@
-// app/index.tsx
-import { useEffect } from "react";
-import { useRouter } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import LoadingSpinner from "../components/LoadingSpinner";
-
+import { Text, View } from "react-native";
 export default function Index() {
-  const router = useRouter();
-
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
-    try {
-      const username = await AsyncStorage.getItem("github_username");
-      if (username) {
-        router.replace("/(tabs)");
-      } else {
-        router.replace("/onboarding");
-      }
-    } catch (error) {
-      router.replace("/onboarding");
-    }
-  };
-
-  return <LoadingSpinner />;
+  return (
+    <View className="flex-1 items-center justify-center  ">
+      <Text className="text-3xl font-bold text-blue-300">
+        Edit app/index.tsx to edit this screen.
+      </Text>
+    </View>
+  );
 }
