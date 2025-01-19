@@ -1,35 +1,50 @@
+import UserHeader from "@/components/UserProfile";
 import { getUserName } from "@/utils/localStorage";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Index() {
-  const [username, setUsername] = useState<string | undefined>();
+  const [username, setUsername] = useState<string>();
+  const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
+
   useEffect(() => {
     const userName = async () => {
-      const username = await getUserName();
-      setUsername(username!);
+      try {
+        const username = await getUserName();
+        if (username) {
+          setUsername(username!);
+        } else {
+          router.replace("/userNameInput");
+        }
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setIsLoading(false);
+      }
     };
     userName();
   }, []);
 
-  const handlePress = () => {
-    AsyncStorage.removeItem("username");
+  const handleClearStorage = async () => {
+    try {
+      await AsyncStorage.removeItem("username");
+      console.log("pressed button");
+      setUsername(undefined);
+    } catch (error) {
+      console.error("Error clearing local storage:", error);
+    }
   };
 
   return (
-    <View className="flex-1 items-center justify-center  ">
-      <Text className="text-3xl font-bold text-blue-300">
-        Edit app/index.tsx to edit this screen.
-      </Text>
-      <Text className="font-bold text-2xl text-black">{username}</Text>
-      <Link href={"/userNameInput"} className="text-xl font-bold ">
-        Go to UserNameInput
-      </Link>
-      <TouchableOpacity className="mt-10  " onPress={handlePress}>
-        <Text>Clear local storage</Text>
-      </TouchableOpacity>
-    </View>
+    <SafeAreaView className="flex-1 pt-5 bg-black">
+      <View>{username && <UserHeader username={username} />}</View>
+      {/* <TouchableOpacity className="mt-10  " onPress={handleClearStorage}> */}
+      {/*   <Text>Clear local storage</Text> */}
+      {/* </TouchableOpacity> */}
+    </SafeAreaView>
   );
 }
