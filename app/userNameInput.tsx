@@ -14,6 +14,7 @@ import { useRouter } from "expo-router";
 const UserNameInput = () => {
   const [userName, setUserName] = useState("");
   const router = useRouter();
+
   const handlePress = async () => {
     try {
       await setUserNameToLocalStorage(userName);
@@ -22,6 +23,7 @@ const UserNameInput = () => {
       console.error(error);
     }
   };
+
   return (
     <SafeAreaView className="flex-1 bg-[#121212]">
       <KeyboardAvoidingView
