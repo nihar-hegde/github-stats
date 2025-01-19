@@ -6,21 +6,36 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from "react-native";
 import React, { useState } from "react";
 import { setUserNameToLocalStorage } from "@/utils/localStorage";
 import { useRouter } from "expo-router";
+import { fetchGitHubUser } from "@/utils/githubAPI";
 
 const UserNameInput = () => {
   const [userName, setUserName] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   const handlePress = async () => {
+    if (!userName.trim()) {
+      Alert.alert("Error", "Username cannot be empty!");
+      return;
+    }
     try {
-      await setUserNameToLocalStorage(userName);
-      router.push("/");
+      setIsLoading(true);
+      const userData = await fetchGitHubUser(userName.trim());
+      if (userData) {
+        console.log(userData);
+        await setUserNameToLocalStorage(userName);
+        router.replace("/");
+      }
     } catch (error) {
       console.error(error);
+      Alert.alert("Error", "Invalid github username. Please try again!");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -51,10 +66,12 @@ const UserNameInput = () => {
           {/* Button Section */}
           <TouchableOpacity
             onPress={handlePress}
-            disabled={!userName.trim()}
+            disabled={!userName.trim() || isLoading}
             className={`${userName.trim() ? "bg-[#0066cc]" : "bg-[#333333]"} mt-6 w-full py-4 rounded-lg items-center`}
           >
-            <Text className="text-white text-lg font-semibold">Submit</Text>
+            <Text className="text-white text-lg font-semibold">
+              {isLoading ? "Validating..." : "Submit"}
+            </Text>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
