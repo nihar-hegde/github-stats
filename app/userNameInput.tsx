@@ -8,11 +8,19 @@ import {
   Platform,
 } from "react-native";
 import React, { useState } from "react";
+import { setUserNameToLocalStorage } from "@/utils/localStorage";
+import { useRouter } from "expo-router";
 
 const UserNameInput = () => {
   const [userName, setUserName] = useState("");
-  const handlePress = () => {
-    console.log(userName);
+  const router = useRouter();
+  const handlePress = async () => {
+    try {
+      await setUserNameToLocalStorage(userName);
+      router.push("/");
+    } catch (error) {
+      console.error(error);
+    }
   };
   return (
     <SafeAreaView className="flex-1 bg-[#121212]">
