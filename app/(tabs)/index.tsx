@@ -42,9 +42,11 @@ export default function Index() {
   return (
     <SafeAreaView className="flex-1 pt-5 bg-black">
       <View>{username && <UserHeader username={username} />}</View>
-      {/* <TouchableOpacity className="mt-10  " onPress={handleClearStorage}> */}
-      {/*   <Text>Clear local storage</Text> */}
-      {/* </TouchableOpacity> */}
+      <TouchableOpacity className="mt-10  " onPress={handleClearStorage}>
+        <Text className="text-white font-bold text-xl">
+          Clear local storage
+        </Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
