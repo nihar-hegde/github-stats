@@ -5,17 +5,23 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icons/github.png",
-    "scheme": "github-stats",
+    "scheme": "githubstats",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/icons/github.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#000000"
+    },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.niharhegde.githubstats"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/icons/github.png",
         "backgroundColor": "#000000"
-      }
+      },
+      "package": "com.niharhegde.githubstats"
     },
     "web": {
       "bundler": "metro",
@@ -24,13 +30,13 @@
     },
     "plugins": [
       "expo-router",
+      "expo-secure-store",
       [
         "expo-splash-screen",
         {
           "image": "./assets/icons/github.png",
-          "resizeMode": "cover",
-          "backgroundColor": "#000000",
-          "enableFullScreenImage_legacy": true
+          "resizeMode": "contain",
+          "backgroundColor": "#000000"
         }
       ],
       "expo-font"

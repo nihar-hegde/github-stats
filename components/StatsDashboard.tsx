@@ -1,3 +1,4 @@
+// components/StatsDashboard.tsx
 import React, { useEffect, useState } from "react";
 import {
   ScrollView,
@@ -7,18 +8,25 @@ import {
   Text,
   Alert,
 } from "react-native";
-import { fetchUserStats } from "@/utils/githubAPI";
+import { githubAPI } from "@/utils/githubAPI";
 import ContributionHeatmap from "./GitHubStats/ContributionHeatmap";
 import LanguageStats from "./GitHubStats/LanguageStats";
 import StreakStats from "./GitHubStats/StreakStats";
 import RepoStats from "./GitHubStats/RepoStats";
+import type {
+  RepoStats as RepoStatsType,
+  Streak,
+  LanguageStatsI,
+} from "@/types/githubStats";
 
-interface StatsDashboardProps {
-  username: string;
+interface Stats {
+  repoStats: RepoStatsType;
+  streak: Streak;
+  languages: LanguageStatsI;
 }
 
-const StatsDashboard: React.FC<StatsDashboardProps> = ({ username }) => {
-  const [stats, setStats] = useState<any>(null);
+const StatsDashboard = () => {
+  const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -26,14 +34,18 @@ const StatsDashboard: React.FC<StatsDashboardProps> = ({ username }) => {
   const fetchStats = async () => {
     try {
       setError(null);
-      const data = await fetchUserStats(username);
+      const data = await githubAPI.fetchUserStats();
       setStats(data);
     } catch (error: any) {
       console.error("Error fetching stats:", error);
-      setError(error.message || "Failed to load statistics");
+      const message =
+        error?.response?.data?.message ||
+        error.message ||
+        "Failed to load statistics";
+      setError(message);
       Alert.alert(
         "Error",
-        "Failed to load statistics. Pull down to refresh and try again.",
+        "Failed to load statistics. Pull down to refresh and try again."
       );
     } finally {
       setLoading(false);
@@ -43,7 +55,7 @@ const StatsDashboard: React.FC<StatsDashboardProps> = ({ username }) => {
 
   useEffect(() => {
     fetchStats();
-  }, [username]);
+  }, []);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -81,13 +93,16 @@ const StatsDashboard: React.FC<StatsDashboardProps> = ({ username }) => {
 
   return (
     <ScrollView
-      className="flex-1 bg-gray-900 px-4"
+      className="flex-1 bg-gray-900 px-4 pb-8"
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor="#60A5FA"
+        />
       }
     >
       <StreakStats streak={stats.streak} />
-      <ContributionHeatmap data={stats.commits} />
       <LanguageStats languages={stats.languages} />
       <RepoStats stats={stats.repoStats} />
     </ScrollView>

@@ -1,3 +1,4 @@
+// components/UserProfile.tsx
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -6,48 +7,53 @@ import {
   ActivityIndicator,
   Image,
   TouchableOpacity,
+  Linking,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
-import { fetchGitHubUser } from "@/utils/githubAPI";
+import { githubAPI } from "@/utils/githubAPI";
 import type { GitHubUser } from "@/types/githubUserTypes";
 import { Ionicons } from "@expo/vector-icons";
 
-const UserHeader = ({ username }: { username: string }) => {
+const UserProfile = () => {
   const [userData, setUserData] = useState<GitHubUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const getUserData = async () => {
-      try {
-        const data = await fetchGitHubUser(username);
-        setUserData(data);
-      } catch (error) {
-        console.error(error);
-        Alert.alert("Error", "Failed to fetch user data. Please try again.");
-      } finally {
-        setLoading(false);
-      }
-    };
+    loadUserData();
+  }, []);
 
-    getUserData();
-  }, [username]);
+  const loadUserData = async () => {
+    try {
+      const data = await githubAPI.fetchAuthenticatedUser();
+      setUserData(data);
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+      Alert.alert("Error", "Failed to load user profile");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLinkPress = (url: string) => {
+    Linking.openURL(url).catch((err) =>
+      Alert.alert("Error", "Couldn't open this link")
+    );
+  };
 
   if (loading) {
     return (
-      <SafeAreaView className="flex items-center justify-center py-8">
+      <View className="flex-1 items-center justify-center py-8">
         <ActivityIndicator size="large" color="#60A5FA" />
-      </SafeAreaView>
+      </View>
     );
   }
 
   if (!userData) {
     return (
-      <SafeAreaView className="flex items-center justify-center py-8">
-        <Text className="text-red-500 text-xl font-semibold">
-          No user data available!
-        </Text>
-      </SafeAreaView>
+      <View className="flex-1 items-center justify-center py-8">
+        <Text className="text-red-500">Failed to load profile</Text>
+      </View>
     );
   }
 
@@ -59,13 +65,6 @@ const UserHeader = ({ username }: { username: string }) => {
         end={{ x: 1, y: 1 }}
         className="rounded-b-3xl shadow-2xl"
       >
-        <TouchableOpacity
-          className="absolute top-4 right-4 z-10"
-          onPress={() => console.log("Settings pressed")}
-        >
-          <Ionicons name="settings-outline" size={24} color="#60A5FA" />
-        </TouchableOpacity>
-
         <View className="p-6">
           <View className="flex-row items-center mb-4">
             <Image
@@ -85,34 +84,54 @@ const UserHeader = ({ username }: { username: string }) => {
           )}
 
           <View className="flex-row justify-between mb-4">
-            <TouchableOpacity className="bg-gray-800 rounded-xl p-3 flex-1 mr-2">
+            <View className="bg-gray-800 rounded-xl p-3 flex-1 mr-2">
               <Text className="text-white text-center text-lg font-semibold">
-                {userData.followers}
+                {userData.followers.toLocaleString()}
               </Text>
               <Text className="text-gray-400 text-center">Followers</Text>
-            </TouchableOpacity>
-            <TouchableOpacity className="bg-gray-800 rounded-xl p-3 flex-1 ml-2">
+            </View>
+            <View className="bg-gray-800 rounded-xl p-3 flex-1 mx-2">
               <Text className="text-white text-center text-lg font-semibold">
-                {userData.following}
+                {userData.following.toLocaleString()}
               </Text>
               <Text className="text-gray-400 text-center">Following</Text>
-            </TouchableOpacity>
+            </View>
+            <View className="bg-gray-800 rounded-xl p-3 flex-1 ml-2">
+              <Text className="text-white text-center text-lg font-semibold">
+                {userData.public_repos.toLocaleString()}
+              </Text>
+              <Text className="text-gray-400 text-center">Repos</Text>
+            </View>
           </View>
 
-          <View className="flex-row items-center">
+          <View className="flex-row flex-wrap">
             {userData.location && (
-              <View className="flex-row items-center mr-4">
-                <Text className="text-blue-400 mr-1">📍</Text>
-                <Text className="text-gray-300 font-bold text-sm">
-                  {userData.location}
-                </Text>
+              <View className="flex-row items-center mr-4 mb-2">
+                <Ionicons name="location-outline" size={16} color="#60A5FA" />
+                <Text className="text-gray-300 ml-1">{userData.location}</Text>
               </View>
             )}
             {userData.blog && (
-              <TouchableOpacity className="flex-row items-center">
-                <Text className="text-blue-400 mr-1">🔗</Text>
-                <Text className="text-blue-400 font-semibold text-sm">
-                  {userData.blog}
+              <TouchableOpacity
+                className="flex-row items-center mr-4 mb-2"
+                onPress={() => handleLinkPress(userData.blog)}
+              >
+                <Ionicons name="link-outline" size={16} color="#60A5FA" />
+                <Text className="text-blue-400 ml-1">Website</Text>
+              </TouchableOpacity>
+            )}
+            {userData.twitter_username && (
+              <TouchableOpacity
+                className="flex-row items-center mb-2"
+                onPress={() =>
+                  handleLinkPress(
+                    `https://twitter.com/${userData.twitter_username}`
+                  )
+                }
+              >
+                <Ionicons name="logo-twitter" size={16} color="#60A5FA" />
+                <Text className="text-blue-400 ml-1">
+                  @{userData.twitter_username}
                 </Text>
               </TouchableOpacity>
             )}
@@ -123,4 +142,4 @@ const UserHeader = ({ username }: { username: string }) => {
   );
 };
 
-export default UserHeader;
+export default UserProfile;
