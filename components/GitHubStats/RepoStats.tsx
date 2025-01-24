@@ -1,7 +1,7 @@
 // components/GitHubStats/RepoStats.tsx
 import React from "react";
 import { View, Text, TouchableOpacity, Linking, Alert } from "react-native";
-import { Star, GitFork, Book, ExternalLink } from "lucide-react";
+import { Feather } from "@expo/vector-icons";
 import type { RepoStats as RepoStatsType } from "@/types/githubStats";
 
 interface RepoStatsProps {
@@ -18,8 +18,8 @@ const RepoStats: React.FC<RepoStatsProps> = ({ stats }) => {
   return (
     <View className="bg-gray-900 rounded-xl p-4 mt-4">
       <View className="flex-row items-center mb-4">
-        <Book className="text-blue-400 mr-2" size={20} />
-        <Text className="text-white text-lg font-semibold">
+        <Feather name="book" size={20} color="#60A5FA" />
+        <Text className="text-white text-lg font-semibold ml-2">
           Repository Stats
         </Text>
       </View>
@@ -74,20 +74,20 @@ const RepoStats: React.FC<RepoStatsProps> = ({ stats }) => {
                 )}
                 <View className="flex-row">
                   <View className="flex-row items-center mr-4">
-                    <Star className="text-yellow-400 mr-1" size={16} />
-                    <Text className="text-gray-300">
+                    <Feather name="star" size={16} color="#FCD34D" />
+                    <Text className="text-gray-300 ml-1">
                       {repo.stars.toLocaleString()}
                     </Text>
                   </View>
                   <View className="flex-row items-center">
-                    <GitFork className="text-green-400 mr-1" size={16} />
-                    <Text className="text-gray-300">
+                    <Feather name="git-branch" size={16} color="#34D399" />
+                    <Text className="text-gray-300 ml-1">
                       {repo.forks.toLocaleString()}
                     </Text>
                   </View>
                 </View>
               </View>
-              <ExternalLink className="text-gray-400" size={16} />
+              <Feather name="external-link" size={16} color="#9CA3AF" />
             </View>
           </TouchableOpacity>
         ))}

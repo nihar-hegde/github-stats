@@ -1,7 +1,7 @@
 // components/GitHubStats/LanguageStats.tsx
 import React from "react";
 import { View, Text } from "react-native";
-import { Code2 } from "lucide-react";
+import { Feather } from "@expo/vector-icons";
 import { LanguageStatsI } from "@/types/githubStats";
 
 interface LanguageStatsProps {
@@ -21,7 +21,14 @@ const LANGUAGE_COLORS: { [key: string]: string } = {
   HTML: "bg-orange-600",
   Swift: "bg-orange-500",
   Kotlin: "bg-purple-600",
-  // Add more languages as needed
+  C: "bg-blue-600",
+  "C++": "bg-pink-600",
+  "C#": "bg-green-600",
+  Shell: "bg-gray-500",
+  Vue: "bg-emerald-500",
+  Dart: "bg-blue-400",
+  Scala: "bg-red-500",
+  Haskell: "bg-purple-500",
 };
 
 const LanguageStats: React.FC<LanguageStatsProps> = ({ languages }) => {
@@ -35,8 +42,8 @@ const LanguageStats: React.FC<LanguageStatsProps> = ({ languages }) => {
   return (
     <View className="bg-gray-900 rounded-xl p-4 mt-4">
       <View className="flex-row items-center mb-4">
-        <Code2 className="text-blue-400 mr-2" size={20} />
-        <Text className="text-white text-lg font-semibold">
+        <Feather name="code" size={20} color="#60A5FA" />
+        <Text className="text-white text-lg font-semibold ml-2">
           Most Used Languages
         </Text>
       </View>
@@ -51,7 +58,9 @@ const LanguageStats: React.FC<LanguageStatsProps> = ({ languages }) => {
               <Text className="text-gray-300 font-medium">{lang}</Text>
               <Text className="text-gray-400">{percentage.toFixed(1)}%</Text>
             </View>
-            <View className="bg-gray-800 h-2.5 rounded-full overflow-hidden">
+            {/* Progress bar container */}
+            <View className="h-2.5 bg-gray-800 rounded-full overflow-hidden">
+              {/* Progress bar fill */}
               <View
                 className={`${colorClass} h-full rounded-full`}
                 style={{ width: `${percentage}%` }}

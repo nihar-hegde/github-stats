@@ -23,6 +23,13 @@ interface Stats {
   repoStats: RepoStatsType;
   streak: Streak;
   languages: LanguageStatsI;
+  contributionStats: {
+    totalContributions: number;
+    contributionCalendar: {
+      totalContributions: number;
+      weeks: any[];
+    };
+  };
 }
 
 const StatsDashboard = () => {
@@ -103,6 +110,12 @@ const StatsDashboard = () => {
       }
     >
       <StreakStats streak={stats.streak} />
+
+      <ContributionHeatmap
+        weeks={stats.contributionStats.contributionCalendar.weeks}
+        totalContributions={stats.contributionStats.totalContributions}
+      />
+
       <LanguageStats languages={stats.languages} />
       <RepoStats stats={stats.repoStats} />
     </ScrollView>

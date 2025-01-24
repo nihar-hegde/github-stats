@@ -18,7 +18,7 @@ const discovery = {
 // Config for auth request
 const config = {
   clientId: "Ov23liVr4oL1TyFxpnHq",
-  scopes: ["user", "repo"], // Add scopes you need
+  scopes: ["user", "repo", "read:user"], // Add scopes you need
   redirectUri: makeRedirectUri({
     scheme: "github-stats",
   }),

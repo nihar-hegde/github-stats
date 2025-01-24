@@ -1,14 +1,26 @@
 // components/GitHubStats/ContributionHeatmap.tsx
 import React from "react";
 import { View, Text } from "react-native";
-import { Calendar } from "lucide-react";
-import { CommitActivity } from "@/types/githubStats";
+import Feather from "@expo/vector-icons/Feather";
 
-interface HeatmapProps {
-  data: CommitActivity[];
+interface ContributionDay {
+  contributionCount: number;
+  date: string;
 }
 
-const ContributionHeatmap: React.FC<HeatmapProps> = ({ data }) => {
+interface ContributionWeek {
+  contributionDays: ContributionDay[];
+}
+
+interface HeatmapProps {
+  weeks: ContributionWeek[];
+  totalContributions: number;
+}
+
+const ContributionHeatmap: React.FC<HeatmapProps> = ({
+  weeks,
+  totalContributions,
+}) => {
   const getIntensityColor = (count: number) => {
     if (count === 0) return "bg-gray-800";
     if (count <= 2) return "bg-green-900";
@@ -17,7 +29,7 @@ const ContributionHeatmap: React.FC<HeatmapProps> = ({ data }) => {
     return "bg-green-300";
   };
 
-  const getMontLabel = (weekIndex: number) => {
+  const getMonthLabel = (date: string) => {
     const months = [
       "Jan",
       "Feb",
@@ -32,15 +44,14 @@ const ContributionHeatmap: React.FC<HeatmapProps> = ({ data }) => {
       "Nov",
       "Dec",
     ];
-    const date = new Date();
-    date.setDate(date.getDate() - (data.length - weekIndex) * 7);
-    return months[date.getMonth()];
+    return months[new Date(date).getMonth()];
   };
 
   const renderMonthLabels = () => {
     const monthLabels = new Set();
-    return data.map((_, weekIndex) => {
-      const month = getMontLabel(weekIndex);
+    return weeks.map((week, weekIndex) => {
+      const firstDay = week.contributionDays[0];
+      const month = getMonthLabel(firstDay.date);
       if (!monthLabels.has(month) && weekIndex % 4 === 0) {
         monthLabels.add(month);
         return (
@@ -59,35 +70,25 @@ const ContributionHeatmap: React.FC<HeatmapProps> = ({ data }) => {
 
   return (
     <View className="bg-gray-900 rounded-xl p-4 mt-4">
-      <View className="flex-row items-center mb-6">
-        <Calendar className="text-blue-400 mr-2" size={20} />
-        <Text className="text-white text-lg font-semibold">
-          Contribution Activity
+      <View className="flex-row items-center mb-2">
+        <Feather name="calendar" size={20} color="#60A5FA" />
+        <Text className="text-white text-lg font-semibold ml-2">
+          {totalContributions.toLocaleString()} Contributions
         </Text>
       </View>
 
       <View className="relative">
         {renderMonthLabels()}
         <View className="flex-row flex-wrap mt-2">
-          {data.map((week, weekIndex) => (
+          {weeks.map((week, weekIndex) => (
             <View key={weekIndex} className="flex-col">
-              {week.days.map((count, dayIndex) => (
+              {week.contributionDays.map((day, dayIndex) => (
                 <View
                   key={`${weekIndex}-${dayIndex}`}
                   className={`w-3 h-3 m-0.5 rounded-sm ${getIntensityColor(
-                    count
+                    day.contributionCount
                   )}`}
-                >
-                  {count > 0 && (
-                    <View className="absolute -top-6 left-1/2 transform -translate-x-1/2 hidden">
-                      <View className="bg-gray-800 px-2 py-1 rounded">
-                        <Text className="text-white text-xs">
-                          {count} contributions
-                        </Text>
-                      </View>
-                    </View>
-                  )}
-                </View>
+                />
               ))}
             </View>
           ))}

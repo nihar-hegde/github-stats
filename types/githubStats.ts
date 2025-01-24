@@ -1,7 +1,19 @@
-export interface CommitActivity {
-  total: number;
-  week: number;
-  days: number[];
+// types/githubStats.ts
+export interface ContributionDay {
+  contributionCount: number;
+  date: string;
+}
+
+export interface ContributionWeek {
+  contributionDays: ContributionDay[];
+}
+
+export interface ContributionStats {
+  totalContributions: number;
+  contributionCalendar: {
+    totalContributions: number;
+    weeks: ContributionWeek[];
+  };
 }
 
 export interface LanguageStatsI {
@@ -30,8 +42,9 @@ export interface RepoStats {
   totalPublicRepos: number;
 }
 
-export interface Streak {
-  currentStreak: number;
-  longestStreak: number;
-  totalCommits: number;
+export interface GitHubStats {
+  repoStats: RepoStats;
+  streak: Streak;
+  languages: LanguageStatsI;
+  contributionStats: ContributionStats;
 }

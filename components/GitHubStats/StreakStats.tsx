@@ -1,8 +1,9 @@
 // components/GitHubStats/StreakStats.tsx
 import React from "react";
 import { View, Text } from "react-native";
-import { Flame, GitCommit, Trophy } from "lucide-react";
+import { Feather } from "@expo/vector-icons";
 import { Streak } from "@/types/githubStats";
+import Ionicons from "@expo/vector-icons/Ionicons";
 
 interface StreakStatsProps {
   streak: Streak;
@@ -14,8 +15,10 @@ const StreakStats: React.FC<StreakStatsProps> = ({ streak }) => {
       <View className="flex-row justify-between">
         <View className="bg-gray-900 rounded-xl p-4 flex-1 mr-2">
           <View className="flex-row items-center mb-2">
-            <Flame className="text-orange-400 mr-2" size={20} />
-            <Text className="text-white font-semibold">Current Streak</Text>
+            <Ionicons name="flame" size={24} color="#FB923C" />
+            <Text className="text-white font-semibold ml-2">
+              Current Streak
+            </Text>
           </View>
           <Text className="text-2xl font-bold text-orange-400">
             {streak.currentStreak} days
@@ -25,8 +28,10 @@ const StreakStats: React.FC<StreakStatsProps> = ({ streak }) => {
 
         <View className="bg-gray-900 rounded-xl p-4 flex-1 ml-2">
           <View className="flex-row items-center mb-2">
-            <Trophy className="text-yellow-400 mr-2" size={20} />
-            <Text className="text-white font-semibold">Longest Streak</Text>
+            <Feather name="award" size={20} color="#FCD34D" />
+            <Text className="text-white font-semibold ml-2">
+              Longest Streak
+            </Text>
           </View>
           <Text className="text-2xl font-bold text-yellow-400">
             {streak.longestStreak} days
@@ -37,8 +42,10 @@ const StreakStats: React.FC<StreakStatsProps> = ({ streak }) => {
 
       <View className="bg-gray-900 rounded-xl p-4">
         <View className="flex-row items-center mb-2">
-          <GitCommit className="text-blue-400 mr-2" size={20} />
-          <Text className="text-white font-semibold">Total Contributions</Text>
+          <Feather name="git-commit" size={20} color="#60A5FA" />
+          <Text className="text-white font-semibold ml-2">
+            Total Contributions
+          </Text>
         </View>
         <Text className="text-2xl font-bold text-blue-400">
           {streak.totalCommits.toLocaleString()}
