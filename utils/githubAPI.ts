@@ -1,48 +1,43 @@
 // utils/githubAPI.ts
 import axios, { AxiosInstance } from "axios";
 import { PopularRepo, RepoStats, Streak } from "@/types/githubStats";
+import { calculateStreak } from "./streakCalculator";
+
+interface ContributionStats {
+  totalCommits: number;
+  totalContributions: number; // Added this field
+  totalPRs: number;
+  totalIssues: number;
+  totalStars: number;
+  pullRequestContributions: number;
+  issueContributions: number;
+  totalRepositoriesContributedTo: number;
+  contributionCalendar: {
+    totalContributions: number;
+    weeks: any[];
+  };
+}
 
 class GitHubAPI {
-  private api: AxiosInstance;
   private graphqlApi: AxiosInstance;
   private accessToken: string | null = null;
 
   constructor() {
-    this.api = axios.create({
-      baseURL: "https://api.github.com",
-      headers: {
-        Accept: "application/vnd.github.v3+json",
-      },
-    });
-
     this.graphqlApi = axios.create({
       baseURL: "https://api.github.com/graphql",
+      headers: {
+        Accept: "application/json",
+      },
     });
-
-    // Add response interceptor for error handling
-    this.api.interceptors.response.use(
-      (response) => response,
-      (error) => {
-        if (
-          error.response?.status === 403 &&
-          error.response?.data?.message?.includes("rate limit")
-        ) {
-          throw new Error("API rate limit exceeded. Please try again later.");
-        }
-        throw error;
-      }
-    );
   }
 
   setAccessToken(token: string | null) {
     this.accessToken = token;
     if (token) {
-      this.api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
       this.graphqlApi.defaults.headers.common[
         "Authorization"
       ] = `Bearer ${token}`;
     } else {
-      delete this.api.defaults.headers.common["Authorization"];
       delete this.graphqlApi.defaults.headers.common["Authorization"];
     }
   }
@@ -94,65 +89,93 @@ class GitHubAPI {
     };
   }
 
-  async fetchUserStats(): Promise<{
-    repoStats: RepoStats;
-    streak: Streak;
-    languages: { [key: string]: number };
-    contributionStats: {
-      totalContributions: number;
-      contributionCalendar: {
-        totalContributions: number;
-        weeks: any[];
-      };
-    };
-  }> {
+  async fetchAllStats() {
     if (!this.accessToken) throw new Error("No access token available");
 
+    // Modified query in fetchAllStats
     const query = `
-      query {
-        viewer {
-          repositories(first: 100, orderBy: {field: STARGAZERS, direction: DESC}, privacy: PUBLIC) {
-            nodes {
+query {
+  viewer {
+    # Repository data - only owned repos, not forks
+    repositories(first: 100, orderBy: {field: STARGAZERS, direction: DESC}, affiliations: [OWNER], isFork: false) {
+      nodes {
+        name
+        description
+        stargazerCount
+        forkCount
+        primaryLanguage {
+          name
+        }
+        languages(first: 10, orderBy: {field: SIZE, direction: DESC}) {
+          edges {
+            size
+            node {
               name
-              description
-              stargazerCount
-              forkCount
-              primaryLanguage {
-                name
-              }
-              languages(first: 10, orderBy: {field: SIZE, direction: DESC}) {
-                edges {
-                  size
-                  node {
-                    name
-                  }
-                }
-              }
-              isPrivate
-            }
-          }
-          contributionsCollection {
-            totalCommitContributions
-            restrictedContributionsCount
-            contributionCalendar {
-              totalContributions
-              weeks {
-                contributionDays {
-                  contributionCount
-                  date
-                }
-              }
             }
           }
         }
+        isPrivate
       }
-    `;
+    }
+    
+    # Contribution data with more details
+    contributionsCollection {
+      totalCommitContributions
+      restrictedContributionsCount
+      totalIssueContributions
+      totalPullRequestContributions
+      totalPullRequestReviewContributions
+      totalRepositoriesWithContributedCommits
+      contributionCalendar {
+        totalContributions
+        weeks {
+          contributionDays {
+            contributionCount
+            date
+          }
+        }
+      }
+      commitContributionsByRepository {
+        contributions {
+          totalCount
+        }
+        repository {
+          nameWithOwner
+        }
+      }
+    }
+    
+    # Pull Requests and Issues
+    pullRequests(first: 1) {
+      totalCount
+    }
+    issues(first: 1) {
+      totalCount
+    }
+  }
+}
+`;
 
     const { data } = await this.graphqlApi.post("", { query });
     const userData = data.data.viewer;
 
-    // Process repository statistics
-    const repoStats: RepoStats = {
+    const repoStats = this.processRepositoryStats(userData.repositories.nodes);
+    const languages = this.processLanguageStats(userData.repositories.nodes);
+    const contributionStats = this.processContributionStats(userData);
+    const streak = calculateStreak(
+      userData.contributionsCollection.contributionCalendar.weeks
+    );
+
+    return {
+      repoStats,
+      languages,
+      contributionStats,
+      streak,
+    };
+  }
+
+  private processRepositoryStats(repositories: any[]): RepoStats {
+    const stats: RepoStats = {
       totalStars: 0,
       totalForks: 0,
       totalWatchers: 0,
@@ -161,26 +184,36 @@ class GitHubAPI {
       totalPublicRepos: 0,
     };
 
-    const languages: { [key: string]: number } = {};
-
-    userData.repositories.nodes.forEach((repo: any) => {
+    repositories.forEach((repo) => {
       if (repo.isPrivate) {
-        repoStats.totalPrivateRepos++;
+        stats.totalPrivateRepos++;
       } else {
-        repoStats.totalPublicRepos++;
-        repoStats.totalStars += repo.stargazerCount;
-        repoStats.totalForks += repo.forkCount;
+        stats.totalPublicRepos++;
+        stats.totalStars += repo.stargazerCount;
+        stats.totalForks += repo.forkCount;
 
         if (repo.stargazerCount > 0) {
-          repoStats.popularRepos.push({
+          stats.popularRepos.push({
             name: repo.name,
             stars: repo.stargazerCount,
             forks: repo.forkCount,
             description: repo.description,
           });
         }
+      }
+    });
 
-        // Process languages
+    stats.popularRepos.sort((a, b) => b.stars - a.stars);
+    stats.popularRepos = stats.popularRepos.slice(0, 5);
+
+    return stats;
+  }
+
+  private processLanguageStats(repositories: any[]): { [key: string]: number } {
+    const languages: { [key: string]: number } = {};
+
+    repositories.forEach((repo) => {
+      if (!repo.isPrivate) {
         repo.languages.edges.forEach((edge: any) => {
           const langName = edge.node.name;
           languages[langName] = (languages[langName] || 0) + edge.size;
@@ -188,75 +221,36 @@ class GitHubAPI {
       }
     });
 
-    // Sort popular repos
-    repoStats.popularRepos.sort((a, b) => b.stars - a.stars).slice(0, 5);
-
-    // Calculate streak information from contribution calendar
-    const streak = this.calculateStreak(
-      userData.contributionsCollection.contributionCalendar.weeks
-    );
-
-    return {
-      repoStats,
-      streak,
-      languages,
-      contributionStats: {
-        totalContributions:
-          userData.contributionsCollection.totalCommitContributions,
-        contributionCalendar:
-          userData.contributionsCollection.contributionCalendar,
-      },
-    };
+    return languages;
   }
 
-  private calculateStreak(weeks: any[]): Streak {
-    let currentStreak = 0;
-    let longestStreak = 0;
-    let totalCommits = 0;
+  private processContributionStats(userData: any): ContributionStats {
+    const contributions = userData.contributionsCollection;
 
-    // Flatten contribution days
-    const days = weeks
-      .flatMap((week: any) => week.contributionDays)
-      .sort(
-        (a: any, b: any) =>
-          new Date(b.date).getTime() - new Date(a.date).getTime()
-      );
+    // Get total contributions from the contribution calendar
+    // This includes all types of contributions: commits, issues, PRs, reviews
+    const totalContributions =
+      contributions.contributionCalendar.totalContributions;
 
-    let streakCount = 0;
-    const today = new Date().toISOString().split("T")[0];
-
-    // Calculate current streak
-    for (const day of days) {
-      totalCommits += day.contributionCount;
-
-      if (day.contributionCount > 0) {
-        streakCount++;
-        currentStreak = streakCount;
-      } else {
-        break;
-      }
-
-      // If we're not looking at today's contributions, break the streak
-      if (day.date !== today) {
-        break;
-      }
-    }
-
-    // Calculate longest streak
-    streakCount = 0;
-    for (let i = 0; i < days.length; i++) {
-      if (days[i].contributionCount > 0) {
-        streakCount++;
-        longestStreak = Math.max(longestStreak, streakCount);
-      } else {
-        streakCount = 0;
-      }
-    }
+    // Calculate total commits including private contributions
+    const totalCommits =
+      contributions.totalCommitContributions +
+      (contributions.restrictedContributionsCount || 0);
 
     return {
-      currentStreak,
-      longestStreak,
       totalCommits,
+      totalContributions, // Added this field
+      totalPRs: userData.pullRequests.totalCount,
+      totalIssues: userData.issues.totalCount,
+      totalStars: userData.repositories.nodes.reduce(
+        (sum: number, repo: any) => sum + (repo.stargazerCount || 0),
+        0
+      ),
+      pullRequestContributions: contributions.totalPullRequestContributions,
+      issueContributions: contributions.totalIssueContributions,
+      totalRepositoriesContributedTo:
+        contributions.totalRepositoriesWithContributedCommits,
+      contributionCalendar: contributions.contributionCalendar,
     };
   }
 }

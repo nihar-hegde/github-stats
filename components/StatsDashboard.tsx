@@ -12,28 +12,34 @@ import { githubAPI } from "@/utils/githubAPI";
 import ContributionHeatmap from "./GitHubStats/ContributionHeatmap";
 import LanguageStats from "./GitHubStats/LanguageStats";
 import StreakStats from "./GitHubStats/StreakStats";
+import ContributionStats from "./GitHubStats/ContributionStats";
 import RepoStats from "./GitHubStats/RepoStats";
-import type {
-  RepoStats as RepoStatsType,
-  Streak,
-  LanguageStatsI,
-} from "@/types/githubStats";
 
-interface Stats {
-  repoStats: RepoStatsType;
-  streak: Streak;
-  languages: LanguageStatsI;
+interface GitHubStats {
+  repoStats: any;
+  languages: { [key: string]: number };
   contributionStats: {
-    totalContributions: number;
+    totalCommits: number;
+    totalPRs: number;
+    totalIssues: number;
+    totalStars: number;
+    pullRequestContributions: number;
+    issueContributions: number;
+    totalRepositoriesContributedTo: number;
     contributionCalendar: {
       totalContributions: number;
       weeks: any[];
     };
   };
+  streak: {
+    currentStreak: number;
+    longestStreak: number;
+    totalCommits: number;
+  };
 }
 
 const StatsDashboard = () => {
-  const [stats, setStats] = useState<Stats | null>(null);
+  const [stats, setStats] = useState<GitHubStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -41,8 +47,8 @@ const StatsDashboard = () => {
   const fetchStats = async () => {
     try {
       setError(null);
-      const data = await githubAPI.fetchUserStats();
-      setStats(data);
+      const allStats = await githubAPI.fetchAllStats();
+      setStats(allStats);
     } catch (error: any) {
       console.error("Error fetching stats:", error);
       const message =
@@ -109,13 +115,14 @@ const StatsDashboard = () => {
         />
       }
     >
+      <ContributionStats stats={stats.contributionStats} />
       <StreakStats streak={stats.streak} />
-
       <ContributionHeatmap
         weeks={stats.contributionStats.contributionCalendar.weeks}
-        totalContributions={stats.contributionStats.totalContributions}
+        totalContributions={
+          stats.contributionStats.contributionCalendar.totalContributions
+        }
       />
-
       <LanguageStats languages={stats.languages} />
       <RepoStats stats={stats.repoStats} />
     </ScrollView>
